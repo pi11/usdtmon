@@ -1,0 +1,40 @@
+[Unit]
+Description=usdtmon Telegram bot
+Documentation=file:///var/www/webii/usdtmon/README.md
+Wants=network-online.target
+After=network-online.target postgresql.service
+
+[Service]
+Type=exec
+User=webii
+Group=webii
+WorkingDirectory=/var/www/webii/usdtmon
+EnvironmentFile=/var/www/webii/usdtmon/.env
+# Logs go to journald; JSON lines are easy to filter with `journalctl -o cat | jq`.
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/var/www/webii/usdtmon/.venv/bin/usdtmon bot
+
+# SIGTERM stops long polling gracefully.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=always
+RestartSec=5
+# Configuration errors exit with status 2: don't restart-loop on them.
+RestartPreventExitStatus=2
+
+# Hardening: the service only needs network access and to read its directory.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

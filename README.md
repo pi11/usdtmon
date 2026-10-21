@@ -67,23 +67,49 @@ cursor updates keep the results correct even if a lease is lost.
 The bot also needs the blockchain endpoints. It uses them to validate addresses and to
 record the subscription checkpoint (the latest finalized block).
 
-Example systemd unit:
+### Deploying with systemd
 
-```ini
-[Unit]
-Description=usdtmon monitor
-After=network-online.target postgresql.service
+Unit files for the bot and the combined worker are in `deploy/systemd/`. They assume the
+default layout below. If you use another path or user, edit `User=`, `Group=`,
+`WorkingDirectory=`, `EnvironmentFile=` and `ExecStart=`.
 
-[Service]
-WorkingDirectory=/opt/usdtmon
-EnvironmentFile=/opt/usdtmon/.env
-ExecStart=/opt/usdtmon/.venv/bin/usdtmon monitor
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
 ```
+/var/www/webii/usdtmon/          # checkout, owned by webii
+├── .venv/                       # python3.12 -m venv .venv && .venv/bin/pip install .
+└── .env                         # chmod 600; read by systemd (EnvironmentFile)
+```
+
+First install:
+
+```bash
+cd /var/www/webii/usdtmon
+python3.12 -m venv .venv && .venv/bin/pip install .
+cp .env.example .env && chmod 600 .env          # fill it in
+.venv/bin/usdtmon check-config
+.venv/bin/usdtmon migrate
+
+sudo cp deploy/systemd/usdtmon-*.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now usdtmon-worker usdtmon-bot
+```
+
+Updating:
+
+```bash
+cd /var/www/webii/usdtmon && git pull && .venv/bin/pip install .
+.venv/bin/usdtmon migrate
+sudo systemctl restart usdtmon-worker usdtmon-bot
+```
+
+Logs: `journalctl -u usdtmon-worker -f` (add `-o cat | jq` for the JSON output).
+
+The units restart on crashes. A configuration error (exit status 2) stops the unit instead of
+restarting it in a loop. Migrations are never run automatically: apply them yourself before
+restarting. Run **exactly one** `usdtmon-bot`, because Telegram long polling allows a single
+consumer per token. You can run several workers.
+
+In a `.env` used as an `EnvironmentFile`, put comments on their own lines. systemd does not
+strip trailing `# comments` from values.
 
 Use `usdtmon check-config` to validate the environment without starting anything.
 
