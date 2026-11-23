@@ -137,7 +137,7 @@ also read, but variables already set in the environment take precedence over it.
 | `<NET>_REQUEST_TIMEOUT` | 15 | Seconds |
 | `<NET>_MAX_CONCURRENCY` | 4 | Parallel requests per provider |
 | `<NET>_RATE_LIMIT` | 10 | Requests per second per provider |
-| `<NET>_MAX_RETRIES`, `<NET>_BACKOFF_BASE`, `<NET>_BACKOFF_MAX` | 5, 0.5, 30 | Exponential backoff with jitter |
+| `<NET>_MAX_RETRIES`, `<NET>_BACKOFF_BASE`, `<NET>_BACKOFF_MAX` | 5, 0.5, 30 | Exponential backoff with jitter. A longer `Retry-After` or "suspended for N s" in a 429 takes precedence |
 | `NOTIFY_POLL_INTERVAL` | 2 | Seconds between outbox polls |
 | `NOTIFY_MAX_ATTEMPTS` | 10 | Attempts before a notification is marked failed |
 | `NOTIFY_RATE_LIMIT` | 25 | Messages per second (Telegram allows about 30) |

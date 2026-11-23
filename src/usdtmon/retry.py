@@ -28,12 +28,12 @@ class RateLimiter:
 
     async def acquire(self) -> None:
         async with self._lock:
-            now = time.monotonic()
-            wait = self._next - now
-            self._next = max(now, self._next) + self._interval
-        if wait > 0:
-            await asyncio.sleep(wait)
+            # Sleep while holding the lock (waiters queue in FIFO order) and re-check
+            # afterwards, so a penalty also delays calls that are already waiting.
+            while (wait := self._next - time.monotonic()) > 0:
+                await asyncio.sleep(wait)
+            self._next = time.monotonic() + self._interval
 
     def penalize(self, seconds: float) -> None:
-        """Push back all future calls, e.g. after an HTTP 429 with Retry-After."""
+        """Push back all future calls, e.g. after an HTTP 429."""
         self._next = max(self._next, time.monotonic() + seconds)

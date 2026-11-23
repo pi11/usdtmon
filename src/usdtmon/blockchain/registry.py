@@ -20,6 +20,7 @@ def _rpc(ns: NetworkSettings, url: str, headers: dict[str, str] | None = None) -
     return JsonRpcClient(
         url,
         headers=headers,
+        network=ns.code,
         timeout=ns.request_timeout,
         max_concurrency=ns.max_concurrency,
         rate_limit=ns.rate_limit,
